@@ -4296,7 +4296,7 @@ static int fastrpc_device_open(struct inode *inode, struct file *filp)
 
 static int fastrpc_set_process_info(struct fastrpc_file *fl)
 {
-	int err = 0, buf_size = 0;
+	int err = 0;
 	char strpid[PID_SIZE];
 	char cur_comm[TASK_COMM_LEN];
 
@@ -5470,8 +5470,10 @@ static int __init fastrpc_device_init(void)
 #ifdef CONFIG_DEBUG_FS
 	debugfs_root = debugfs_create_dir("adsprpc", NULL);
 	if (IS_ERR_OR_NULL(debugfs_root)) {
+#ifdef CONFIG_DEBUG_FS
 		pr_warn("Error: %s: %s: failed to create debugfs root dir\n",
 			current->comm, __func__);
+#endif
 		debugfs_remove_recursive(debugfs_root);
 		debugfs_root = NULL;
 	}
