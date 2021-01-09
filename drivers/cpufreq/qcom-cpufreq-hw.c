@@ -892,6 +892,10 @@ static int qcom_cpufreq_hw_driver_probe(struct platform_device *pdev)
 		return rc;
 	}
 
+	rc = cpuhp_setup_state_nocalls(CPUHP_AP_ONLINE, "qcom-cpufreq:online",
+				       cpuhp_qcom_online, NULL);
+	if (rc)
+		dev_err(&pdev->dev, "CPUHP callback setup failed, rc=%d\n", rc);
 
 	rc = cpuhp_setup_state_nocalls(CPUHP_AP_ONLINE, "qcom-cpufreq:online",
 				       cpuhp_qcom_online, NULL);
