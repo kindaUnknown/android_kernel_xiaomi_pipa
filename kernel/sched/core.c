@@ -7521,7 +7521,7 @@ EXPORT_SYMBOL_GPL(show_state_filter);
  * NOTE: this function does not set the idle thread's NEED_RESCHED
  * flag, to make booting more robust.
  */
-void init_idle(struct task_struct *idle, int cpu)
+void __init init_idle(struct task_struct *idle, int cpu)
 {
 #ifdef CONFIG_SMP
 	struct affinity_context ac = (struct affinity_context) {
