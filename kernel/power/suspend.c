@@ -324,9 +324,18 @@ MODULE_PARM_DESC(pm_test_delay,
 static int suspend_test(int level)
 {
 #ifdef CONFIG_PM_DEBUG
+#ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+	pr_info("%s pm_test_level:%d, level:%d\n", __func__,
+		pm_test_level, level);
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 	if (pm_test_level == level) {
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 		pr_info("suspend debug: Waiting for %d second(s).\n",
 				pm_test_delay);
+#else
+		pr_err("suspend debug: Waiting for %d second(s).\n",
+				pm_test_delay);
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 		mdelay(pm_test_delay * 1000);
 		return 1;
 	}
@@ -394,8 +403,15 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 	int error;
 
 	error = platform_suspend_prepare(state);
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (error)
 		goto Platform_finish;
+#else
+	if (error) {
+		pr_info("%s platform_suspend_prepare fail\n", __func__);
+		goto Platform_finish;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	error = dpm_suspend_late(PMSG_SUSPEND);
 	if (error) {
@@ -403,8 +419,15 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 		goto Platform_finish;
 	}
 	error = platform_suspend_prepare_late(state);
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (error)
 		goto Devices_early_resume;
+#else
+	if (error) {
+		pr_info("%s prepare late fail\n", __func__);
+		goto Devices_early_resume;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	error = dpm_suspend_noirq(PMSG_SUSPEND);
 	if (error) {
@@ -412,11 +435,25 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 		goto Platform_early_resume;
 	}
 	error = platform_suspend_prepare_noirq(state);
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (error)
 		goto Platform_wake;
+#else
+	if (error) {
+		pr_info("%s prepare_noirq fail\n", __func__);
+		goto Platform_wake;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (suspend_test(TEST_PLATFORM))
 		goto Platform_wake;
+#else
+	if (suspend_test(TEST_PLATFORM)) {
+		pr_info("%s test_platform fail\n", __func__);
+		goto Platform_wake;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	if (state == PM_SUSPEND_TO_IDLE) {
 		s2idle_loop();
@@ -429,6 +466,9 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 
 	arch_suspend_disable_irqs();
 	BUG_ON(!irqs_disabled());
+#ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+	pr_info("%s syscore_suspend\n", __func__);
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	system_state = SYSTEM_SUSPEND;
 
@@ -479,8 +519,15 @@ int suspend_devices_and_enter(suspend_state_t state)
 	int error;
 	bool wakeup = false;
 
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (!sleep_state_supported(state))
 		return -ENOSYS;
+#else
+	if (!sleep_state_supported(state)) {
+		pr_info("sleep_state_supported false\n");
+		return -ENOSYS;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	pm_suspend_target_state = state;
 
@@ -488,8 +535,15 @@ int suspend_devices_and_enter(suspend_state_t state)
 		pm_set_suspend_no_platform();
 
 	error = platform_suspend_begin(state);
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (error)
 		goto Close;
+#else
+	if (error) {
+		pr_info("%s platform_suspend_begin fail\n", __func__);
+		goto Close;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	suspend_console();
 	suspend_test_start();
@@ -499,12 +553,23 @@ int suspend_devices_and_enter(suspend_state_t state)
 		goto Recover_platform;
 	}
 	suspend_test_finish("suspend devices");
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (suspend_test(TEST_DEVICES))
 		goto Recover_platform;
+#else
+	if (suspend_test(TEST_DEVICES)) {
+		pr_info("%s TEST_DEVICES fail\n", __func__);
+		goto Recover_platform;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	do {
 		error = suspend_enter(state, &wakeup);
 	} while (!error && !wakeup && platform_suspend_again(state));
+
+#ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+	pr_info("suspend_enter end, error:%d, wakeup:%d\n", error, wakeup);
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
  Resume_devices:
 	suspend_test_start();
@@ -558,10 +623,21 @@ static int enter_state(suspend_state_t state)
 		}
 #endif
 	} else if (!valid_state(state)) {
+#ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+		pr_info("%s invalid_state\n", __func__);
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 		return -EINVAL;
 	}
+
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (!mutex_trylock(&system_transition_mutex))
 		return -EBUSY;
+#else
+	if (!mutex_trylock(&system_transition_mutex)) {
+		pr_info("%s mutex_trylock fail\n", __func__);
+		return -EBUSY;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	if (state == PM_SUSPEND_TO_IDLE)
 		s2idle_begin();
@@ -575,8 +651,19 @@ static int enter_state(suspend_state_t state)
 	pm_pr_dbg("Preparing system for sleep (%s)\n", mem_sleep_labels[state]);
 	pm_suspend_clear_flags();
 	error = suspend_prepare(state);
+#ifndef CONFIG_OPLUS_WAKELOCK_PROFILER
 	if (error)
 		goto Unlock;
+#else
+	if (error) {
+		pr_info("%s suspend_prepare error:%d\n", __func__, error);
+		goto Unlock;
+	}
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
+
+#ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+	pr_info("%s suspend_prepare success\n", __func__);
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
 	if (suspend_test(TEST_FREEZER))
 		goto Finish;
@@ -586,6 +673,9 @@ static int enter_state(suspend_state_t state)
 	pm_restrict_gfp_mask();
 	error = suspend_devices_and_enter(state);
 	pm_restore_gfp_mask();
+#ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+	pr_info("%s suspend_devices_and_enter end\n", __func__);
+#endif /* CONFIG_OPLUS_WAKELOCK_PROFILER */
 
  Finish:
 	events_check_enabled = false;
