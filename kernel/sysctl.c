@@ -157,6 +157,10 @@ static unsigned long dirty_bytes_min = 2 * PAGE_SIZE;
 
 /* this is needed for the proc_dointvec_minmax for [fs_]overflow UID and GID */
 static int maxolduid = 65535;
+#ifdef CONFIG_OPLUS_FEATURE_UXIO_FIRST
+unsigned int sysctl_uxio_io_opt = true;
+bool sysctl_wbt_enable = true;
+#endif
 static int minolduid;
 
 static int ngroups_max = NGROUPS_MAX;
@@ -444,6 +448,22 @@ static struct ctl_table kern_table[] = {
 		.maxlen         = sizeof(unsigned int),
 		.mode           = 0644,
 		.proc_handler   = proc_dointvec,
+	},
+#endif
+#ifdef CONFIG_OPLUS_FEATURE_UXIO_FIRST
+	{
+			.procname	= "uxio_first_opt",
+			.data		= &sysctl_uxio_io_opt,
+			.maxlen		= sizeof(int),
+			.mode		= 0644,
+			.proc_handler	= proc_dointvec,
+	},
+	{
+			.procname	= "wbt_enable",
+			.data		= &sysctl_wbt_enable,
+			.maxlen		= sizeof(int),
+			.mode		= 0644,
+			.proc_handler	= proc_dointvec,
 	},
 #endif
 #ifdef CONFIG_SCHED_DEBUG
