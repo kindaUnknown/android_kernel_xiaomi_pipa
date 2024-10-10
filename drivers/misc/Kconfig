@@ -648,6 +648,12 @@ config SPI_XIAOMI_TP
 	help
 	  Say Y if want use xiaomi touch panel.
 
+config MMHARDWARE_OTHER_DETECTION
+        tristate "Register xiaomi mmhardware detection module"
+        default n
+        help
+          This adds support for mmhardware detection
+
 config FORCE_FAST_CHARGE
 	bool "Force faster charge rate for USB"
 	default y
