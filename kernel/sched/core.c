@@ -2940,10 +2940,6 @@ static void ttwu_queue(struct task_struct *p, int cpu, int wake_flags)
  * accesses to the task state; see try_to_wake_up() and set_current_state().
  */
 
-#ifdef CONFIG_SMP
-#define walt_try_to_wake_up(a) {}
-#endif
-
 /**
  * try_to_wake_up - wake up a thread
  * @p: the thread to be awakened
@@ -3119,8 +3115,6 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 	 * their previous state and preserve Program Order.
 	 */
 	smp_cond_load_acquire(&p->on_cpu, !VAL);
-
-	walt_try_to_wake_up(p);
 
 	cpu = select_task_rq(p, p->wake_cpu, SD_BALANCE_WAKE, wake_flags,
 			     sibling_count_hint);
@@ -6277,7 +6271,6 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 	retval = security_task_setscheduler(p);
 	if (retval)
 		goto out_free_new_mask;
-
 
 	cpuset_cpus_allowed(p, cpus_allowed);
 	cpumask_and(new_mask, in_mask, cpus_allowed);
