@@ -102,7 +102,6 @@ static void nvt_all_para_recovery(void);
 
 extern int dsi_panel_lockdown_info_read(unsigned char *plockdowninfo);
 extern void dsi_panel_doubleclick_enable(bool on);
-extern void touch_irq_boost(void);
 extern void lpm_disable_for_dev(bool on, char event_dev);
 
 uint32_t ENG_RST_ADDR  = 0x7FFF80;
@@ -1785,7 +1784,6 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 	}
 #endif
 
-	touch_irq_boost();
 	lpm_disable_for_dev(true, 0x1);
 
 	mutex_lock(&ts->lock);
