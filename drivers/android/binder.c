@@ -67,6 +67,10 @@
 #include <linux/task_work.h>
 #include <linux/sizes.h>
 
+#ifdef CONFIG_TASK_DELAY_ACCT
+#include <linux/delayacct.h>
+#endif
+
 #include <uapi/linux/sched/types.h>
 #include <uapi/linux/android/binder.h>
 
@@ -5832,7 +5836,13 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	switch (cmd) {
 	case BINDER_WRITE_READ:
+#ifdef CONFIG_TASK_DELAY_ACCT
+		delayacct_binder_start();
+#endif
 		ret = binder_ioctl_write_read(filp, cmd, arg, thread);
+#ifdef CONFIG_TASK_DELAY_ACCT
+		delayacct_binder_end();
+#endif
 		if (ret)
 			goto err;
 		break;
