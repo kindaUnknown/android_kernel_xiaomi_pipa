@@ -22,12 +22,6 @@ config MIGT
 	help
 	  Boost cpufreq when current frame drawing time too long
 
-config MILLET
-	bool "MIUI frozen framework"
-	depends on PACKAGE_RUNTIME_INFO
-	help
-	  MIUI frozen function
-
 config MIGT_ENERGY_MODEL
 	bool "DT-based Energy Model for CPU and GPU"
 	depends on MIGT
