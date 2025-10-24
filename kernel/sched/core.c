@@ -8835,18 +8835,12 @@ inline void set_inherit_top_app(struct task_struct *p, struct task_struct *from)
 	if (is_critical_task(p) || from->inherit_top_app >= INHERIT_DEPTH)
 		return;
 	p->inherit_top_app = from->inherit_top_app + 1;
-#ifdef CONFIG_PERF_HUMANTASK
-	p->human_task = 1;
-#endif
 }
 
 inline void restore_inherit_top_app(struct task_struct *p)
 {
 	if (p && is_inherit_top_app(p)) {
 		p->inherit_top_app = 0;
-#ifdef CONFIG_PERF_HUMANTASK
-		p->human_task = 0;
-#endif
 	}
 }
 #endif

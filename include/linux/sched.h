@@ -1405,10 +1405,6 @@ struct task_struct {
 	unsigned int			inherit_top_app;
 	unsigned int    		critical_task;
 #endif
-#ifdef CONFIG_PERF_HUMANTASK
-	unsigned int 			human_task;
-	unsigned int 			cpux;
-#endif
 
 #ifdef CONFIG_KASAN
 	unsigned int			kasan_depth;
