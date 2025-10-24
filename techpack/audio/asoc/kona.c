@@ -5721,7 +5721,6 @@ static struct snd_soc_ops msm_mi2s_cs35l41_be_ops = {
 };
 #endif
 
-#ifdef CONFIG_BOARD_XIAOMI
 static int cs35l41_init(struct snd_soc_pcm_runtime *rtd)
 {
 #if 0
@@ -5764,7 +5763,6 @@ static int tfa98xx_init(struct snd_soc_pcm_runtime *rtd)
 	return 0;
 }
 #endif // CONFIG_TARGET_PRODUCT_MUNCH
-#endif // CONFIG_BOARD_XIAOMI
 
 static struct snd_soc_ops msm_fe_qos_ops = {
 	.prepare = msm_fe_qos_prepare,
