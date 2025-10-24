@@ -9,6 +9,4 @@ config XIAOMI_MIUI
 	  Say Y if you want to compile the Xiaomi MIUI specific kernel modifications.
 	  Say N if you want to discard the Xiaomi MIUI specific kernel modifications.
 
-source "drivers/xiaomi/fragmention/Kconfig"
-
 endmenu
