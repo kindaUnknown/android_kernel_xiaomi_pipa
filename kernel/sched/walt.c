@@ -3450,15 +3450,6 @@ void walt_irq_work(struct irq_work *irq_work)
 							&asym_cap_sibling_cpus))
 				flag |= SCHED_CPUFREQ_INTERCLUSTER_MIG;
 
-#ifdef CONFIG_XIAOMI_MIUI
-			if (!is_migration && !is_asym_migration) {
-				cpufreq_update_util(cpu_rq(cpu), flag |
-						SCHED_CPUFREQ_CONTINUE);
-				i++;
-				continue;
-			}
-#endif
-
 			if (i == num_cpus)
 				cpufreq_update_util(cpu_rq(cpu), flag);
 			else

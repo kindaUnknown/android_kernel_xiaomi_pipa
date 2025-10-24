@@ -95,9 +95,6 @@
 #include <linux/thread_info.h>
 #include <linux/cpufreq_times.h>
 #include <linux/scs.h>
-#ifdef CONFIG_XIAOMI_MIUI
-#include <linux/cpuset.h>
-#endif
 
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
@@ -2382,14 +2379,6 @@ long _do_fork(unsigned long clone_flags,
 		get_task_struct(p);
 	}
 
-#ifdef CONFIG_XIAOMI_MIUI
-	p->top_app = 0;
-	p->inherit_top_app = 0;
-	p->critical_task = 0;
-
-	if (current->critical_task)
-		cpuset_cpus_allowed_mi(p);
-#endif
 	wake_up_new_task(p);
 
 	/* forking complete and child started to run, tell ptracer */
