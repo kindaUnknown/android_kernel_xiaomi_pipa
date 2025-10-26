@@ -509,7 +509,7 @@ struct sock {
 #if IS_ENABLED(CONFIG_DEBUG_SPINLOCK) || IS_ENABLED(CONFIG_DEBUG_LOCK_ALLOC)
 	ANDROID_KABI_RESERVE(1);
 #else
-	ANDROID_KABI_USE(1, spinlock_t sk_peer_lock);
+	ANDROID_KABI_USE(1, raw_spinlock_t sk_peer_lock);
 #endif
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);

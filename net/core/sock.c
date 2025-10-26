@@ -1131,9 +1131,9 @@ static const struct cred *sk_get_peer_cred(struct sock *sk)
 {
 	const struct cred *cred;
 
-	spin_lock(&sk->sk_peer_lock);
+	raw_spin_lock(&sk->sk_peer_lock);
 	cred = get_cred(sk->sk_peer_cred);
-	spin_unlock(&sk->sk_peer_lock);
+	raw_spin_unlock(&sk->sk_peer_lock);
 
 	return cred;
 }
@@ -1302,9 +1302,9 @@ static int sk_getsockopt(struct sock *sk, int level, int optname,
 		if (len > sizeof(peercred))
 			len = sizeof(peercred);
 
-		spin_lock(&sk->sk_peer_lock);
+		raw_spin_lock(&sk->sk_peer_lock);
 		cred_to_ucred(sk->sk_peer_pid, sk->sk_peer_cred, &peercred);
-		spin_unlock(&sk->sk_peer_lock);
+		raw_spin_unlock(&sk->sk_peer_lock);
 
 		if (copy_to_sockptr(optval, &peercred, len))
 			return -EFAULT;
@@ -2904,7 +2904,7 @@ void sock_init_data_uid(struct socket *sock, struct sock *sk, kuid_t uid)
 
 	sk->sk_peer_pid 	=	NULL;
 	sk->sk_peer_cred	=	NULL;
-	spin_lock_init(&sk->sk_peer_lock);
+	raw_spin_lock_init(&sk->sk_peer_lock);
 
 	sk->sk_write_pending	=	0;
 	sk->sk_rcvlowat		=	1;
