@@ -292,6 +292,7 @@ static int __usb_bam_register_wake_cb(enum usb_ctrl bam_type, int idx,
 static void wait_for_prod_release(enum usb_ctrl cur_bam);
 static void usb_bam_start_suspend(struct usb_bam_ipa_handshake_info *info_ptr);
 
+#ifdef CONFIG_IPC_LOGGING
 static struct {
 	char buf[DBG_MAX_MSG][DBG_MSG_LEN];   /* buffer */
 	unsigned int idx;   /* index */
@@ -300,6 +301,7 @@ static struct {
 	.idx = 0,
 	.lck = __RW_LOCK_UNLOCKED(lck)
 };
+#endif
 
 /*put_timestamp - writes time stamp to buffer */
 static void __maybe_unused put_timestamp(char *tbuf)
@@ -2740,7 +2742,9 @@ int usb_bam_disconnect_ipa(enum usb_ctrl cur_bam,
 	u8 idx = 0;
 	struct usb_bam_ctx_type *ctx = &msm_usb_bam[cur_bam];
 	struct usb_bam_pipe_connect *pipe_connect;
+#ifdef CONFIG_IPC_LOGGING
 	struct device *bam_dev = &ctx->usb_bam_pdev->dev;
+#endif
 	enum usb_bam_mode bam_mode;
 
 	if (!is_ipa_handle_valid(ipa_params->prod_clnt_hdl) &&
