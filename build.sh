@@ -45,16 +45,16 @@ fi
 
     make $MAKE_ARGS -j$(nproc --all) 2> >(tee -a error.log >&2)
 
-    if [ -f "out/arch/arm64/boot/Image" ]; then
-        echo "The file [out/arch/arm64/boot/Image] exists. Built successfully."
+    if [ -f "out/arch/arm64/boot/Image.gz" ]; then
+        echo "The file [out/arch/arm64/boot/Image.gz] exists. Built successfully."
     else
-        echo "The file [out/arch/arm64/boot/Image] does not exist. Seems build failed."
+        echo "The file [out/arch/arm64/boot/Image.gz] does not exist. Seems build failed."
         exit 1
     fi
 
     rm -rf anykernel/kernels/
     mkdir -p anykernel/kernels/
-    cp out/arch/arm64/boot/Image anykernel/kernels/
+    cp out/arch/arm64/boot/Image.gz anykernel/kernels/
     cp out/arch/arm64/boot/dtb anykernel/kernels/
 
     cd anykernel
