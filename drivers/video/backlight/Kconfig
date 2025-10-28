@@ -492,13 +492,13 @@ config BACKLIGHT_RAVE_SP
 
 config BACKLIGHT_KTZ8866
 	tristate "KTZ8866 Backlight"
-	depends on I2C
+	depends on I2C && BACKLIGHT_CLASS_DEVICE
 	help
 	  If you have a KTZ8866 say Y to enable the backlight driver.
 
 config BACKLIGHT_DUALKTZ8866
 	tristate "Dual KTZ8866 Backlight"
-	depends on I2C
+	depends on I2C && BACKLIGHT_CLASS_DEVICE
 	help
 	  If you have a KTZ8866 say Y to enable the backlight driver.
 

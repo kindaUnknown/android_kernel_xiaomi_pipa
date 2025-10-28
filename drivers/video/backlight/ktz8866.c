@@ -30,11 +30,11 @@ struct ktz8866 {
 	struct ktz8866_platform_data *pdata;
 };
 
-struct ktz8866 *bd;
+static struct ktz8866 *bd;
 
 static struct ktz8866_led g_ktz8866_led;
 
-int ktz8866_read(u8 reg, u8 *data)
+static int ktz8866_read(u8 reg, u8 *data)
 {
 	int ret;
 
@@ -49,7 +49,7 @@ int ktz8866_read(u8 reg, u8 *data)
 	return 0;
 }
 
-int ktz8866_write(u8 reg, u8 data)
+static int ktz8866_write(u8 reg, u8 data)
 {
 	return i2c_smbus_write_byte_data(bd->client, reg, data);
 }
@@ -61,13 +61,13 @@ static int ktz8866_backlight_update_status(struct backlight_device *backlight)
 	int brightness = 0;
 	u8 v[2];
 
-	if(g_ktz8866_led.HBMenable) {
-		if(exponential_bl <= BL_LEVEL_MAX)
+	if (g_ktz8866_led.HBMenable) {
+		if (exponential_bl <= BL_LEVEL_MAX)
 			exponential_bl = (exponential_bl * 1700) / 2047;
 		else
 			exponential_bl = ((exponential_bl - 2048) * (2047-1700)) / 2047 + 1700;
 	}
- 	brightness = bl_level_remap[exponential_bl];
+	brightness = bl_level_remap[exponential_bl];
 	/* brightness = exponential_bl; */
 
 	if (brightness < 0 || brightness > BL_LEVEL_MAX || brightness == g_ktz8866_led.level)
@@ -82,7 +82,7 @@ static int ktz8866_backlight_update_status(struct backlight_device *backlight)
 	} else if (brightness == 0) {
 		ktz8866_write(KTZ8866_DISP_BL_ENABLE, 0x1f);
 		g_ktz8866_led.ktz8866_status = 0;
-		usleep_range((10 * 1000),(10 * 1000) + 10);
+		usleep_range((10 * 1000), (10 * 1000) + 10);
 		dev_warn(&bd->client->dev, "ktz8866 backlight disable,dimming close");
 	}
 
@@ -106,6 +106,7 @@ static int ktz8866_backlight_get_brightness(struct backlight_device *backlight)
 	//struct ktz8866 *bd = bl_get_data(backlight);
 	int brightness = backlight->props.brightness;
 	u8 v[2];
+
 	mutex_lock(&g_ktz8866_led.lock);
 
 	ktz8866_read(0x5, &v[0]);
@@ -129,11 +130,11 @@ static int ktz8866_backlight_conf(struct ktz8866 *bd)
 	u8 read;
 
 	dev_warn(&bd->client->dev,
-		"ktz8866_backlight_conf \n");
+		"ktz8866_backlight_conf\n");
 	mutex_lock(&g_ktz8866_led.lock);
 
 	reg_count = ARRAY_SIZE(ktz8866_regs_conf);
-	for (i = 0; i < reg_count; i++){
+	for (i = 0; i < reg_count; i++) {
 		ret = ktz8866_write(ktz8866_regs_conf[i].reg, ktz8866_regs_conf[i].value);
 		ktz8866_read(ktz8866_regs_conf[i].reg, &read);
 		dev_warn(&bd->client->dev, "ktz8866 reading 0x%02x is 0x%02x\n", ktz8866_regs_conf[i].reg, read);
@@ -174,6 +175,7 @@ static int ktz8866_probe(struct i2c_client *client,
 	int ret;
 	u8 read;
 	bool backlight_conf_disable;
+
 	backlight_conf_disable = false;
 
 	dev_warn(&client->dev,
@@ -192,7 +194,7 @@ static int ktz8866_probe(struct i2c_client *client,
 	if (!bd)
 		return -ENOMEM;
 	dev_warn(&client->dev,
-		"ktz8866 bd = devm_kzalloc \n");
+		"ktz8866 bd = devm_kzalloc\n");
 
 	bd->client = client;
 
@@ -202,20 +204,20 @@ static int ktz8866_probe(struct i2c_client *client,
 	if (!bd->pdata)
 		return -ENOMEM;
 	dev_warn(&client->dev,
-		"bd->pdata = devm_kzalloc \n");
+		"bd->pdata = devm_kzalloc\n");
 
 	g_ktz8866_led.HBMenable = false;
-	g_ktz8866_led.HBMenable = of_property_read_bool((&client->dev)->of_node,"ktz8866,backlight-HBM-enable");
+	g_ktz8866_led.HBMenable = of_property_read_bool((&client->dev)->of_node, "ktz8866,backlight-HBM-enable");
 	memset(&props, 0, sizeof(props));
 	props.type = BACKLIGHT_RAW;
-	if(g_ktz8866_led.HBMenable)
+	if (g_ktz8866_led.HBMenable)
 		props.max_brightness = BL_LEVEL_MAX_HBM;
 	else
 		props.max_brightness = 2047;
 	props.brightness = clamp_t(unsigned int, 98, 16,
 				   props.max_brightness);
 	dev_warn(&client->dev,
-		"ktz8866 devm_backlight_device_register \n");
+		"ktz8866 devm_backlight_device_register\n");
 	backlight = devm_backlight_device_register(&client->dev,
 					      dev_name(&client->dev),
 					      &bd->client->dev, bd,
@@ -225,18 +227,18 @@ static int ktz8866_probe(struct i2c_client *client,
 		return PTR_ERR(backlight);
 	}
 	dev_warn(&client->dev,
-		"ktz8866 backlight_update_status \n");
+		"ktz8866 backlight_update_status\n");
 	backlight_update_status(backlight);
 	dev_warn(&client->dev,
-		"ktz8866 i2c_set_clientdata \n");
+		"ktz8866 i2c_set_clientdata\n");
 	i2c_set_clientdata(client, backlight);
 
 	parse_dt(&client->dev, bd->pdata);
 	dev_warn(&client->dev,
-		"ktz8866 parse_dt \n");
+		"ktz8866 parse_dt\n");
 
-	backlight_conf_disable = of_property_read_bool((&client->dev)->of_node,"ktz8866,backlight-conf-disable");
-	dev_warn(&client->dev,"backlight_conf_disable=%d \n",backlight_conf_disable);
+	backlight_conf_disable = of_property_read_bool((&client->dev)->of_node, "ktz8866,backlight-conf-disable");
+	dev_warn(&client->dev, "backlight_conf_disable=%d\n", backlight_conf_disable);
 
 	dev_warn(&client->dev,
 		"ktz8866 ktz8866_probe KTZ8866_LCD_DRV_HW_EN\n");
@@ -257,13 +259,13 @@ static int ktz8866_probe(struct i2c_client *client,
 	gpio_direction_input(bd->pdata->panelid_gpio);
 	g_ktz8866_led.panel_id = gpio_get_value(bd->pdata->panelid_gpio);
 
-	if(!backlight_conf_disable) {
-		dev_warn(&client->dev, "ktz8866 ktz8866_backlight_conf  \n");
+	if (!backlight_conf_disable) {
+		dev_warn(&client->dev, "ktz8866 ktz8866_backlight_conf\n");
 		ktz8866_backlight_conf(bd);
 	}
 
 
-	dev_warn(&client->dev,"backlight_conf_disable=%d,  HBMenable =%d\n",backlight_conf_disable,g_ktz8866_led.HBMenable);
+	dev_warn(&client->dev, "backlight_conf_disable=%d,  HBMenable =%d\n", backlight_conf_disable, g_ktz8866_led.HBMenable);
 
 	ktz8866_read(KTZ8866_DISP_FLAGS, &read);
 	dev_err(&bd->client->dev, "ktz8866 reading 0x%02x is 0x%02x\n", KTZ8866_DISP_FLAGS, read);
