@@ -5839,32 +5839,11 @@ out_unlock:
 	return retval;
 }
 
-static bool task_is_unity_game(struct task_struct *p)
-{
-	struct task_struct *t;
-	bool ret = false;
-
-	/* Filter for Android user applications (i.e., positive adj) */
-	if (p->signal->oom_score_adj >= 0) {
-		rcu_read_lock();
-		for_each_thread(p, t) {
-			/* Check for a UnityMain thread in the thread group */
-			if (!strcmp(t->comm, "UnityMain")) {
-				ret = true;
-				break;
-			}
-		}
-		rcu_read_unlock();
-	}
-
-	return ret;
-}
-
 long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 {
 	cpumask_var_t cpus_allowed, new_mask;
 	struct task_struct *p;
-	int retval = 0;
+	int retval;
 	int dest_cpu;
 	cpumask_t allowed_mask;
 
@@ -5879,20 +5858,6 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 	/* Prevent p going away */
 	get_task_struct(p);
 	rcu_read_unlock();
-
-	/*
-	 * Unity-based games like to shoot themselves in the foot by setting a
-	 * nonsense CPU affinity, restricting the game to a narrow set of CPU
-	 * cores that it thinks are the "big" cores in a heterogeneous CPU. It
-	 * assumes that CPUs only have two performance domains (clusters), and
-	 * therefore royally mucks up games' CPU affinities on CPUs which have
-	 * more than two performance domains.
-	 *
-	 * Check if the target task is part of a Unity-based game and silently
-	 * ignore the setaffinity request so that it can't sabotage itself.
-	 */
-	if (task_is_unity_game(p))
-		goto out_put_task;
 
 	if (p->flags & PF_NO_SETAFFINITY) {
 		retval = -EINVAL;
@@ -5974,6 +5939,73 @@ out_put_task:
 	return retval;
 }
 EXPORT_SYMBOL_GPL(sched_setaffinity);
+
+char sched_lib_name[LIB_PATH_LENGTH] = { "libunity.so,com.miHoYo.,libfb.so,liblogic.so,libssgamesdkcronet.so,libil2cpp.so,com.activision."};
+unsigned int sched_lib_mask_force = 255;
+bool is_sched_lib_based_app(pid_t pid)
+{
+	const char *name = NULL;
+	char *libname, *lib_list;
+	struct vm_area_struct *vma;
+	char path_buf[LIB_PATH_LENGTH];
+	char *tmp_lib_name;
+	bool found = false;
+	struct task_struct *p;
+	struct mm_struct *mm;
+
+	if (strnlen(sched_lib_name, LIB_PATH_LENGTH) == 0)
+		return false;
+
+	tmp_lib_name = kmalloc(LIB_PATH_LENGTH, GFP_KERNEL);
+	if (!tmp_lib_name)
+		return false;
+
+	rcu_read_lock();
+
+	p = find_process_by_pid(pid);
+	if (!p) {
+		rcu_read_unlock();
+		kfree(tmp_lib_name);
+		return false;
+	}
+
+	/* Prevent p going away */
+	get_task_struct(p);
+	rcu_read_unlock();
+
+	mm = get_task_mm(p);
+	if (!mm)
+		goto put_task_struct;
+
+	down_read(&mm->mmap_sem);
+	for (vma = mm->mmap; vma ; vma = vma->vm_next) {
+		if (vma->vm_file && vma->vm_flags & VM_EXEC) {
+			name = d_path(&vma->vm_file->f_path,
+					path_buf, LIB_PATH_LENGTH);
+			if (IS_ERR(name))
+				goto release_sem;
+
+			strlcpy(tmp_lib_name, sched_lib_name, LIB_PATH_LENGTH);
+			lib_list = tmp_lib_name;
+			while ((libname = strsep(&lib_list, ","))) {
+				libname = skip_spaces(libname);
+				if (strnstr(name, libname,
+					strnlen(name, LIB_PATH_LENGTH))) {
+					found = true;
+					goto release_sem;
+				}
+			}
+		}
+	}
+
+release_sem:
+	up_read(&mm->mmap_sem);
+	mmput(mm);
+put_task_struct:
+	put_task_struct(p);
+	kfree(tmp_lib_name);
+	return found;
+}
 
 static int get_user_cpu_mask(unsigned long __user *user_mask_ptr, unsigned len,
 			     struct cpumask *new_mask)
