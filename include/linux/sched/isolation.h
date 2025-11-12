@@ -31,15 +31,7 @@ extern void __init housekeeping_init(void);
 
 static inline int housekeeping_any_cpu(enum hk_type type)
 {
-	cpumask_t available;
-	int cpu;
-
-	cpumask_andnot(&available, cpu_online_mask, cpu_isolated_mask);
-	cpu = cpumask_any(&available);
-	if (cpu >= nr_cpu_ids)
-		cpu = smp_processor_id();
-
-	return cpu;
+        return smp_processor_id();
 }
 
 static inline const struct cpumask *housekeeping_cpumask(enum hk_type type)
