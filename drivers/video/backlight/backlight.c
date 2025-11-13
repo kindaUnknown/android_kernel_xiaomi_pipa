@@ -119,7 +119,6 @@ static void backlight_generate_event(struct backlight_device *bd,
 	envp[1] = NULL;
 	kobject_uevent_env(&bd->dev.kobj, KOBJ_CHANGE, envp);
 	sysfs_notify(&bd->dev.kobj, NULL, "actual_brightness");
-	sysfs_notify(&bd->dev.kobj, NULL, "brightness");
 }
 
 static ssize_t bl_power_show(struct device *dev, struct device_attribute *attr,
@@ -181,8 +180,11 @@ int backlight_device_set_brightness(struct backlight_device *bd,
 		if (brightness > bd->props.max_brightness)
 			rc = -EINVAL;
 		else {
-			if ((!bd->use_count && brightness) || (bd->use_count && !brightness)) {
-				pr_info("%s: set brightness to %lu\n", __func__, brightness);
+			if ((!bd->use_count && brightness) ||
+			    (bd->use_count && !brightness)) {
+				pr_info("%s: set brightness to %lu\n",
+					__func__, brightness);
+
 				if (!bd->use_count)
 					bd->use_count++;
 				else
@@ -213,6 +215,12 @@ static ssize_t brightness_store(struct device *dev,
 		return rc;
 
 	bd->usr_brightness_req = brightness;
+#ifndef CONFIG_BOARD_XIAOMI
+	brightness = (brightness <= bd->thermal_brightness_limit) ?
+				bd->usr_brightness_req :
+				bd->thermal_brightness_limit;
+#endif
+
 	rc = backlight_device_set_brightness(bd, brightness);
 
 	return rc ? rc : count;
@@ -317,6 +325,7 @@ static ssize_t brightness_clone_store(struct device *dev,
 
 	bd->props.brightness_clone_backup = brightness;
 	bd->props.brightness_clone = brightness;
+
 	envp[0] = "SOURCE=sysfs";
 	envp[1] = NULL;
 	kobject_uevent_env(&bd->dev.kobj, KOBJ_CHANGE, envp);
@@ -389,14 +398,14 @@ static int bd_cdev_set_cur_brightness(struct thermal_cooling_device *cdev,
 	brightness_lvl = bd->props.max_brightness - state;
 	if (brightness_lvl == bd->thermal_brightness_limit)
 		return 0;
-	bd->thermal_brightness_limit = brightness_lvl;
 
+	bd->thermal_brightness_limit = brightness_lvl;
 	brightness_lvl = (bd->usr_brightness_req
 				<= bd->thermal_brightness_limit) ?
 				bd->usr_brightness_req :
 				bd->thermal_brightness_limit;
-
 	backlight_device_set_brightness(bd, brightness_lvl);
+
 	return 0;
 }
 
