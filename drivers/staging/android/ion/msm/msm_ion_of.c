@@ -30,7 +30,7 @@ struct ion_heap_desc {
 static struct ion_heap_desc ion_heap_meta[] = {
 	{
 		.id	= ION_SYSTEM_HEAP_ID,
-		.name	= ION_SYSTEM_HEAP_NAME,
+		.name	= "ion_system_heap",
 	},
 	{
 		.id	= ION_SECURE_HEAP_ID,
